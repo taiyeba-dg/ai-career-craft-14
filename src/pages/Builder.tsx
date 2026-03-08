@@ -145,8 +145,7 @@ const Builder = () => {
             <Button size="sm" variant="outline" onClick={handlePrint}>
               <Download className="w-4 h-4 mr-1" /> PDF
             </Button>
-            <Button size="sm" variant="outline"><FileDown className="w-4 h-4 mr-1" /> Word</Button>
-            <Button size="sm" variant="outline"><FileType className="w-4 h-4 mr-1" /> Text</Button>
+            <Button size="sm" variant="outline" onClick={handleExportText}><FileType className="w-4 h-4 mr-1" /> Text</Button>
           </div>
         </div>
 
