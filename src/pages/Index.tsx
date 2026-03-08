@@ -23,9 +23,9 @@ const steps = [
 ];
 
 const testimonials = [
-  { name: "Sarah Mitchell", role: "Product Manager at Google", quote: "ResumeAI helped me land 3 interviews in my first week. The AI suggestions were incredibly relevant and the ATS score feature gave me confidence.", avatar: "SM", rating: 5 },
+  { name: "Sarah Mitchell", role: "Product Manager at Google", quote: "Velora helped me land 3 interviews in my first week. The AI suggestions were incredibly relevant and the ATS score feature gave me confidence.", avatar: "SM", rating: 5 },
   { name: "James Rodriguez", role: "Senior Developer at Meta", quote: "The technical resume template and AI-powered bullet points perfectly highlighted my projects and achievements. Absolutely game-changing.", avatar: "JR", rating: 5 },
-  { name: "Emily Chen", role: "Marketing Director", quote: "I've used dozens of resume builders. ResumeAI is the first one that actually understands marketing metrics and tailors content accordingly.", avatar: "EC", rating: 5 },
+  { name: "Emily Chen", role: "Marketing Director", quote: "I've used dozens of resume builders. Velora is the first one that actually understands marketing metrics and tailors content accordingly.", avatar: "EC", rating: 5 },
   { name: "David Park", role: "Recent Graduate", quote: "As a new grad with limited experience, the AI helped me articulate my projects and internships in a way that impressed recruiters.", avatar: "DP", rating: 5 },
 ];
 
@@ -48,8 +48,8 @@ const Index = () => {
             Your Resume,<br />
             <span className="text-gradient">Perfected by AI</span>
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            Create ATS-optimized resumes with AI-powered content, professional templates, and real-time suggestions.
+          <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in font-sans" style={{ animationDelay: '0.2s' }}>
+            Craft ATS-optimized resumes with AI-powered content, premium templates, and real-time suggestions.
             Land more interviews, faster.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center animate-fade-in" style={{ animationDelay: '0.3s' }}>
@@ -76,8 +76,8 @@ const Index = () => {
       <section className="container section-padding">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need to Land Your Dream Job</h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Powerful AI tools combined with professional designs to make your application stand out.
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto font-sans">
+            Powerful AI tools combined with premium designs to make your application stand out.
           </p>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -87,7 +87,7 @@ const Index = () => {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                   <f.icon className="w-6 h-6" />
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{f.title}</h3>
+                <h3 className="font-semibold text-lg mb-2 font-display">{f.title}</h3>
                 <p className="text-sm text-muted-foreground">{f.description}</p>
               </CardContent>
             </Card>
@@ -100,15 +100,15 @@ const Index = () => {
         <div className="container section-padding">
           <div className="text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
-            <p className="text-muted-foreground text-lg">Three simple steps to your perfect resume</p>
+            <p className="text-muted-foreground text-lg font-sans">Three simple steps to your perfect resume</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {steps.map((s, i) => (
               <div key={i} className="text-center relative">
-                <div className="w-16 h-16 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-4 text-xl font-bold">
+                <div className="w-16 h-16 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-4 text-xl font-bold font-display">
                   {i + 1}
                 </div>
-                <h3 className="font-semibold text-lg mb-2">{s.title}</h3>
+                <h3 className="font-semibold text-lg mb-2 font-display">{s.title}</h3>
                 <p className="text-sm text-muted-foreground">{s.description}</p>
                 {i < 2 && (
                   <div className="hidden md:block absolute top-8 -right-4 w-8">
@@ -125,7 +125,7 @@ const Index = () => {
       <section className="container section-padding">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Loved by Professionals</h2>
-          <p className="text-muted-foreground text-lg">See what our users have to say</p>
+          <p className="text-muted-foreground text-lg font-sans">See what our users have to say</p>
         </div>
         <div className="max-w-2xl mx-auto">
           <Card className="border-border/50">
@@ -165,8 +165,8 @@ const Index = () => {
       <section className="bg-primary">
         <div className="container section-padding text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary-foreground">Ready to Build Your Perfect Resume?</h2>
-          <p className="text-primary-foreground/80 text-lg mb-8 max-w-xl mx-auto">
-            Join 100,000+ professionals who've landed their dream jobs with ResumeAI.
+          <p className="text-primary-foreground/80 text-lg mb-8 max-w-xl mx-auto font-sans">
+            Join 100,000+ professionals who've landed their dream jobs with Velora.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
             <Input placeholder="Enter your email" type="email" className="bg-primary-foreground text-foreground border-0" />
