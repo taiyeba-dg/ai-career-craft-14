@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,9 +12,39 @@ import { templateList } from '@/data/templates';
 import { ResumeData, Experience, Education } from '@/types/resume';
 import {
   Download, Wand2, RotateCcw, Maximize2, Minimize2,
-  Plus, Trash2, GripVertical, FileText, FileDown, FileType
+  Plus, Trash2, GripVertical, FileText, FileDown, FileType, Upload, Save
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+
+/**
+ * Deep-clone an element with all computed styles inlined,
+ * so the PDF print window reproduces the exact template look.
+ */
+function cloneWithStyles(source: HTMLElement): HTMLElement {
+  const clone = source.cloneNode(true) as HTMLElement;
+
+  const srcAll = source.querySelectorAll('*');
+  const clnAll = clone.querySelectorAll('*');
+
+  // Inline computed styles on every element
+  const inlineStyles = (src: Element, cln: HTMLElement) => {
+    const computed = window.getComputedStyle(src);
+    for (let i = 0; i < computed.length; i++) {
+      const prop = computed[i];
+      cln.style.setProperty(prop, computed.getPropertyValue(prop));
+    }
+  };
+
+  inlineStyles(source, clone);
+  srcAll.forEach((el, i) => {
+    if (clnAll[i] instanceof HTMLElement) {
+      inlineStyles(el, clnAll[i] as HTMLElement);
+    }
+  });
+
+  return clone;
+}
 
 const Builder = () => {
   const [searchParams] = useSearchParams();
@@ -22,6 +52,8 @@ const Builder = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(initialTemplate);
   const [data, setData] = useState<ResumeData>({ ...sampleResume });
   const [fullPreview, setFullPreview] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   const update = (field: keyof ResumeData, value: any) => {
     setData(prev => ({ ...prev, [field]: value }));
@@ -80,21 +112,34 @@ const Builder = () => {
   const score = atsScore();
   const TemplateComp = getTemplateComponent(selectedTemplate);
 
+  // ── PDF Export: clone with inlined computed styles ──
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
     const resumeEl = document.getElementById('resume-print-area');
     if (!resumeEl) return;
-    printWindow.document.write(`<!DOCTYPE html><html><head><title>${data.name} - Resume</title><style>
-      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      @page { size: A4; margin: 0; }
-      @media print { body { width: 210mm; } }
-    </style><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" /></head><body>${resumeEl.innerHTML}</body></html>`);
+
+    const styledClone = cloneWithStyles(resumeEl);
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast({ title: 'Popup blocked', description: 'Please allow popups for PDF export.', variant: 'destructive' });
+      return;
+    }
+
+    printWindow.document.write(`<!DOCTYPE html><html><head>
+      <title>${data.name} - Resume</title>
+      <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        @page { size: A4; margin: 0; }
+        @media print { body { width: 210mm; } }
+      </style>
+    </head><body></body></html>`);
     printWindow.document.close();
-    setTimeout(() => { printWindow.focus(); printWindow.print(); printWindow.close(); }, 500);
+    printWindow.document.body.appendChild(styledClone);
+    setTimeout(() => { printWindow.focus(); printWindow.print(); }, 400);
   };
 
+  // ── Text Export ──
   const handleExportText = () => {
     const lines = [
       data.name, data.title, '',
@@ -114,6 +159,41 @@ const Builder = () => {
     a.download = `${data.name.replace(/\s+/g, '_')}_Resume.txt`; a.click();
   };
 
+  // ── JSON Export (save) ──
+  const handleSaveJSON = () => {
+    const payload = JSON.stringify(data, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${data.name.replace(/\s+/g, '_')}_Resume.json`;
+    a.click();
+    toast({ title: 'Resume saved', description: 'Your resume data has been exported as JSON.' });
+  };
+
+  // ── JSON Import (load) ──
+  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const imported = JSON.parse(ev.target?.result as string) as ResumeData;
+        // Basic validation
+        if (!imported.name || !imported.experience || !imported.education || !imported.skills) {
+          throw new Error('Invalid resume format');
+        }
+        setData(imported);
+        toast({ title: 'Resume imported', description: `Loaded resume for "${imported.name}".` });
+      } catch {
+        toast({ title: 'Import failed', description: 'The file is not a valid Velora resume JSON.', variant: 'destructive' });
+      }
+    };
+    reader.readAsText(file);
+    // Reset so the same file can be re-imported
+    e.target.value = '';
+  };
+
   return (
     <Layout>
       <div className="container py-6">
@@ -123,7 +203,7 @@ const Builder = () => {
             <h1 className="text-2xl font-bold">Resume Builder</h1>
             <p className="text-sm text-muted-foreground">Build your professional resume with AI assistance</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Template Selector */}
             <select
               value={selectedTemplate}
@@ -138,14 +218,31 @@ const Builder = () => {
             {/* ATS Score */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm">
               <div className={`w-3 h-3 rounded-full ${score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} />
-              ATS Score: {score}%
+              ATS: {score}%
             </div>
 
-            {/* Export */}
+            {/* Import */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportJSON}
+              className="hidden"
+            />
+            <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="w-4 h-4 mr-1" /> Import
+            </Button>
+
+            {/* Exports */}
+            <Button size="sm" variant="outline" onClick={handleSaveJSON}>
+              <Save className="w-4 h-4 mr-1" /> Save
+            </Button>
             <Button size="sm" variant="outline" onClick={handlePrint}>
               <Download className="w-4 h-4 mr-1" /> PDF
             </Button>
-            <Button size="sm" variant="outline" onClick={handleExportText}><FileType className="w-4 h-4 mr-1" /> Text</Button>
+            <Button size="sm" variant="outline" onClick={handleExportText}>
+              <FileType className="w-4 h-4 mr-1" /> Text
+            </Button>
           </div>
         </div>
 
@@ -262,7 +359,7 @@ const Builder = () => {
                   {fullPreview ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </Button>
               </div>
-              <div id="resume-print-area" className="border rounded-lg overflow-hidden bg-background shadow-sm max-h-[calc(100vh-220px)] overflow-y-auto">
+              <div id="resume-print-area" className="border rounded-lg overflow-hidden bg-white shadow-sm max-h-[calc(100vh-220px)] overflow-y-auto">
                 <TemplateComp data={data} />
               </div>
             </div>
