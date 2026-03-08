@@ -65,8 +65,8 @@ const Index = () => {
             </Link>
           </div>
           <div className="flex items-center justify-center gap-6 mt-8 text-sm text-muted-foreground animate-fade-in" style={{ animationDelay: '0.4s' }}>
-            <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-primary" /> Free forever plan</span>
-            <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-primary" /> No credit card</span>
+            <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-primary" /> 100% free & open source</span>
+            <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-primary" /> No account needed</span>
             <span className="flex items-center gap-1"><CheckCircle className="w-4 h-4 text-primary" /> ATS-tested</span>
           </div>
         </div>
