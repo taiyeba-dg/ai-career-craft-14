@@ -80,7 +80,39 @@ const Builder = () => {
   const score = atsScore();
   const TemplateComp = getTemplateComponent(selectedTemplate);
 
-  const handlePrint = () => window.print();
+  const handlePrint = () => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    const resumeEl = document.getElementById('resume-print-area');
+    if (!resumeEl) return;
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>${data.name} - Resume</title><style>
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      body { font-family: 'Inter', system-ui, -apple-system, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { size: A4; margin: 0; }
+      @media print { body { width: 210mm; } }
+    </style><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" /></head><body>${resumeEl.innerHTML}</body></html>`);
+    printWindow.document.close();
+    setTimeout(() => { printWindow.focus(); printWindow.print(); printWindow.close(); }, 500);
+  };
+
+  const handleExportText = () => {
+    const lines = [
+      data.name, data.title, '',
+      `${data.email} | ${data.phone} | ${data.location}`, '',
+      'SUMMARY', data.summary, '',
+      'EXPERIENCE',
+      ...data.experience.flatMap(e => [
+        `${e.role} — ${e.company} (${e.startDate}–${e.endDate})`,
+        ...e.bullets.map(b => `  • ${b}`), ''
+      ]),
+      'EDUCATION',
+      ...data.education.map(e => `${e.degree} in ${e.field}, ${e.school} (${e.endDate})`), '',
+      'SKILLS', data.skills.join(', '),
+    ];
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `${data.name.replace(/\s+/g, '_')}_Resume.txt`; a.click();
+  };
 
   return (
     <Layout>
@@ -113,8 +145,7 @@ const Builder = () => {
             <Button size="sm" variant="outline" onClick={handlePrint}>
               <Download className="w-4 h-4 mr-1" /> PDF
             </Button>
-            <Button size="sm" variant="outline"><FileDown className="w-4 h-4 mr-1" /> Word</Button>
-            <Button size="sm" variant="outline"><FileType className="w-4 h-4 mr-1" /> Text</Button>
+            <Button size="sm" variant="outline" onClick={handleExportText}><FileType className="w-4 h-4 mr-1" /> Text</Button>
           </div>
         </div>
 
@@ -231,7 +262,7 @@ const Builder = () => {
                   {fullPreview ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </Button>
               </div>
-              <div className="border rounded-lg overflow-hidden bg-background shadow-sm max-h-[calc(100vh-220px)] overflow-y-auto">
+              <div id="resume-print-area" className="border rounded-lg overflow-hidden bg-background shadow-sm max-h-[calc(100vh-220px)] overflow-y-auto">
                 <TemplateComp data={data} />
               </div>
             </div>
