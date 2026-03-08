@@ -263,7 +263,7 @@ const Builder = () => {
                   {fullPreview ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                 </Button>
               </div>
-              <div className="border rounded-lg overflow-hidden bg-background shadow-sm max-h-[calc(100vh-220px)] overflow-y-auto">
+              <div id="resume-print-area" className="border rounded-lg overflow-hidden bg-background shadow-sm max-h-[calc(100vh-220px)] overflow-y-auto">
                 <TemplateComp data={data} />
               </div>
             </div>
