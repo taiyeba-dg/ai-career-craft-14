@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { FileText } from 'lucide-react';
 
 const SignIn = () => {
   const [email, setEmail] = useState('');
@@ -18,12 +17,12 @@ const SignIn = () => {
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <FileText className="w-5 h-5 text-primary-foreground" />
+              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-display font-bold text-lg">V</span>
               </div>
             </div>
             <CardTitle className="text-2xl">Welcome Back</CardTitle>
-            <CardDescription>Sign in to your ResumeAI account</CardDescription>
+            <CardDescription>Sign in to your Velora account</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Button variant="outline" className="w-full gap-2">

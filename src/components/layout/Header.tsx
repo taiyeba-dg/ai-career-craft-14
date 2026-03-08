@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, FileText, Sparkles } from 'lucide-react';
+import { Menu, X, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
@@ -20,12 +20,11 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary">
-            <FileText className="w-5 h-5 text-primary-foreground" />
+        <Link to="/" className="flex items-center gap-2.5 font-display text-xl">
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-primary">
+            <span className="text-primary-foreground font-display font-bold text-lg">V</span>
           </div>
-          <span className="text-foreground">Resume</span>
-          <span className="text-primary">AI</span>
+          <span className="font-bold tracking-tight text-foreground">Velora</span>
         </Link>
 
         {/* Desktop Nav */}

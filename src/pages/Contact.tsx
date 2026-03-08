@@ -10,7 +10,7 @@ import { Mail, MapPin, Phone, Send, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const faqs = [
-  { q: "Is ResumeAI really free?", a: "Yes! Our free plan lets you create 1 resume with 3 templates and basic AI suggestions. Upgrade to Premium for unlimited resumes and all features." },
+  { q: "Is Velora really free?", a: "Yes! Our free plan lets you create 1 resume with 3 templates and basic AI suggestions. Upgrade to Premium for unlimited resumes and all features." },
   { q: "Are the resumes ATS-compatible?", a: "Absolutely. All our templates are designed and tested to pass through major Applicant Tracking Systems. Our ATS score feature helps you optimize further." },
   { q: "Can I cancel my subscription anytime?", a: "Yes, you can cancel at any time. There are no long-term contracts. Your data remains accessible even after cancellation." },
   { q: "How does the AI content generation work?", a: "Our AI analyzes your experience, skills, and target role to generate optimized bullet points, summaries, and achievements. You can edit, rewrite, expand, or shorten any suggestion." },
@@ -33,16 +33,15 @@ const Contact = () => {
       <section className="container section-padding">
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">Get in Touch</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-sans">
             Have a question or feedback? We'd love to hear from you.
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {/* Contact Info */}
           <div className="space-y-6">
             {[
-              { icon: Mail, label: "Email", value: "hello@resumeai.app" },
+              { icon: Mail, label: "Email", value: "hello@velora.app" },
               { icon: MapPin, label: "Office", value: "San Francisco, CA" },
               { icon: Phone, label: "Phone", value: "+1 (555) 000-0000" },
               { icon: MessageCircle, label: "Live Chat", value: "Available 9am–6pm PST" },
@@ -59,7 +58,6 @@ const Contact = () => {
             ))}
           </div>
 
-          {/* Form */}
           <Card className="md:col-span-2">
             <CardContent className="p-6">
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -75,7 +73,6 @@ const Contact = () => {
           </Card>
         </div>
 
-        {/* FAQ */}
         <div className="max-w-3xl mx-auto mt-16">
           <h2 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h2>
           <Accordion type="single" collapsible>
