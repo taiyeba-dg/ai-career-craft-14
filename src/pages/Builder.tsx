@@ -5,29 +5,23 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { sampleResume } from '@/data/sampleData';
 import { getTemplateComponent } from '@/components/templates';
 import { templateList } from '@/data/templates';
 import { ResumeData, Experience, Education } from '@/types/resume';
 import {
-  Download, Wand2, RotateCcw, Maximize2, Minimize2,
-  Plus, Trash2, GripVertical, FileText, FileDown, FileType, Upload, Save
+  Download, Wand2, Maximize2, Minimize2,
+  Plus, Trash2, GripVertical, FileType, Upload, Save,
+  Loader2, Target, CheckCircle, XCircle, Lightbulb
 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { callResumeAI } from '@/lib/ai';
 
-/**
- * Deep-clone an element with all computed styles inlined,
- * so the PDF print window reproduces the exact template look.
- */
 function cloneWithStyles(source: HTMLElement): HTMLElement {
   const clone = source.cloneNode(true) as HTMLElement;
-
   const srcAll = source.querySelectorAll('*');
   const clnAll = clone.querySelectorAll('*');
-
-  // Inline computed styles on every element
   const inlineStyles = (src: Element, cln: HTMLElement) => {
     const computed = window.getComputedStyle(src);
     for (let i = 0; i < computed.length; i++) {
@@ -35,14 +29,10 @@ function cloneWithStyles(source: HTMLElement): HTMLElement {
       cln.style.setProperty(prop, computed.getPropertyValue(prop));
     }
   };
-
   inlineStyles(source, clone);
   srcAll.forEach((el, i) => {
-    if (clnAll[i] instanceof HTMLElement) {
-      inlineStyles(el, clnAll[i] as HTMLElement);
-    }
+    if (clnAll[i] instanceof HTMLElement) inlineStyles(el, clnAll[i] as HTMLElement);
   });
-
   return clone;
 }
 
@@ -52,6 +42,10 @@ const Builder = () => {
   const [selectedTemplate, setSelectedTemplate] = useState(initialTemplate);
   const [data, setData] = useState<ResumeData>({ ...sampleResume });
   const [fullPreview, setFullPreview] = useState(false);
+  const [aiLoading, setAiLoading] = useState<string | null>(null);
+  const [jobDesc, setJobDesc] = useState('');
+  const [keywords, setKeywords] = useState<{ matched: string[]; missing: string[]; suggestions: string[] } | null>(null);
+  const [showJDPanel, setShowJDPanel] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -112,85 +106,75 @@ const Builder = () => {
   const score = atsScore();
   const TemplateComp = getTemplateComponent(selectedTemplate);
 
-  // ── PDF Export: clone with inlined computed styles ──
+  // ── AI Actions ──
+  const handleAI = async (action: string, content: string, onResult: (r: string) => void) => {
+    setAiLoading(action);
+    try {
+      const result = await callResumeAI({ action: action as any, content, resumeData: data });
+      onResult(result);
+      toast({ title: 'AI updated content' });
+    } catch (e: any) {
+      toast({ title: 'AI Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  const handleMatchKeywords = async () => {
+    if (!jobDesc.trim()) {
+      toast({ title: 'Paste a job description first', variant: 'destructive' });
+      return;
+    }
+    setAiLoading('match');
+    try {
+      const result = await callResumeAI({ action: 'match-keywords', jobDescription: jobDesc, resumeData: data });
+      const parsed = JSON.parse(result);
+      setKeywords(parsed);
+    } catch (e: any) {
+      toast({ title: 'AI Error', description: e.message, variant: 'destructive' });
+    } finally {
+      setAiLoading(null);
+    }
+  };
+
+  // ── Exports ──
   const handlePrint = () => {
     const resumeEl = document.getElementById('resume-print-area');
     if (!resumeEl) return;
-
     const styledClone = cloneWithStyles(resumeEl);
-
     const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      toast({ title: 'Popup blocked', description: 'Please allow popups for PDF export.', variant: 'destructive' });
-      return;
-    }
-
-    printWindow.document.write(`<!DOCTYPE html><html><head>
-      <title>${data.name} - Resume</title>
-      <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        @page { size: A4; margin: 0; }
-        @media print { body { width: 210mm; } }
-      </style>
-    </head><body></body></html>`);
+    if (!printWindow) { toast({ title: 'Popup blocked', variant: 'destructive' }); return; }
+    printWindow.document.write(`<!DOCTYPE html><html><head><title>${data.name} - Resume</title><style>*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}@page{size:A4;margin:0}@media print{body{width:210mm}}</style></head><body></body></html>`);
     printWindow.document.close();
     printWindow.document.body.appendChild(styledClone);
     setTimeout(() => { printWindow.focus(); printWindow.print(); }, 400);
   };
 
-  // ── Text Export ──
   const handleExportText = () => {
-    const lines = [
-      data.name, data.title, '',
-      `${data.email} | ${data.phone} | ${data.location}`, '',
-      'SUMMARY', data.summary, '',
-      'EXPERIENCE',
-      ...data.experience.flatMap(e => [
-        `${e.role} — ${e.company} (${e.startDate}–${e.endDate})`,
-        ...e.bullets.map(b => `  • ${b}`), ''
-      ]),
-      'EDUCATION',
-      ...data.education.map(e => `${e.degree} in ${e.field}, ${e.school} (${e.endDate})`), '',
-      'SKILLS', data.skills.join(', '),
-    ];
+    const lines = [data.name, data.title, '', `${data.email} | ${data.phone} | ${data.location}`, '', 'SUMMARY', data.summary, '', 'EXPERIENCE', ...data.experience.flatMap(e => [`${e.role} — ${e.company} (${e.startDate}–${e.endDate})`, ...e.bullets.map(b => `  • ${b}`), '']), 'EDUCATION', ...data.education.map(e => `${e.degree} in ${e.field}, ${e.school} (${e.endDate})`), '', 'SKILLS', data.skills.join(', ')];
     const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-    a.download = `${data.name.replace(/\s+/g, '_')}_Resume.txt`; a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${data.name.replace(/\s+/g, '_')}_Resume.txt`; a.click();
   };
 
-  // ── JSON Export (save) ──
   const handleSaveJSON = () => {
-    const payload = JSON.stringify(data, null, 2);
-    const blob = new Blob([payload], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${data.name.replace(/\s+/g, '_')}_Resume.json`;
-    a.click();
-    toast({ title: 'Resume saved', description: 'Your resume data has been exported as JSON.' });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${data.name.replace(/\s+/g, '_')}_Resume.json`; a.click();
+    toast({ title: 'Resume saved' });
   };
 
-  // ── JSON Import (load) ──
   const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
         const imported = JSON.parse(ev.target?.result as string) as ResumeData;
-        // Basic validation
-        if (!imported.name || !imported.experience || !imported.education || !imported.skills) {
-          throw new Error('Invalid resume format');
-        }
+        if (!imported.name || !imported.experience || !imported.education || !imported.skills) throw new Error('Invalid');
         setData(imported);
-        toast({ title: 'Resume imported', description: `Loaded resume for "${imported.name}".` });
-      } catch {
-        toast({ title: 'Import failed', description: 'The file is not a valid Velora resume JSON.', variant: 'destructive' });
-      }
+        toast({ title: 'Resume imported', description: `Loaded "${imported.name}".` });
+      } catch { toast({ title: 'Import failed', variant: 'destructive' }); }
     };
     reader.readAsText(file);
-    // Reset so the same file can be re-imported
     e.target.value = '';
   };
 
@@ -204,53 +188,58 @@ const Builder = () => {
             <p className="text-sm text-muted-foreground">Build your professional resume with AI assistance</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Template Selector */}
-            <select
-              value={selectedTemplate}
-              onChange={(e) => setSelectedTemplate(parseInt(e.target.value))}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              {templateList.map((t) => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
+            <select value={selectedTemplate} onChange={(e) => setSelectedTemplate(parseInt(e.target.value))} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+              {templateList.map((t) => (<option key={t.id} value={t.id}>{t.name}</option>))}
             </select>
-
-            {/* ATS Score */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary text-sm">
               <div className={`w-3 h-3 rounded-full ${score >= 80 ? 'bg-green-500' : score >= 50 ? 'bg-yellow-500' : 'bg-red-500'}`} />
               ATS: {score}%
             </div>
-
-            {/* Import */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".json"
-              onChange={handleImportJSON}
-              className="hidden"
-            />
-            <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
-              <Upload className="w-4 h-4 mr-1" /> Import
-            </Button>
-
-            {/* Exports */}
-            <Button size="sm" variant="outline" onClick={handleSaveJSON}>
-              <Save className="w-4 h-4 mr-1" /> Save
-            </Button>
-            <Button size="sm" variant="outline" onClick={handlePrint}>
-              <Download className="w-4 h-4 mr-1" /> PDF
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleExportText}>
-              <FileType className="w-4 h-4 mr-1" /> Text
-            </Button>
+            <input ref={fileInputRef} type="file" accept=".json" onChange={handleImportJSON} className="hidden" />
+            <Button size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}><Upload className="w-4 h-4 mr-1" /> Import</Button>
+            <Button size="sm" variant="outline" onClick={handleSaveJSON}><Save className="w-4 h-4 mr-1" /> Save</Button>
+            <Button size="sm" variant="outline" onClick={handlePrint}><Download className="w-4 h-4 mr-1" /> PDF</Button>
+            <Button size="sm" variant="outline" onClick={handleExportText}><FileType className="w-4 h-4 mr-1" /> Text</Button>
+            <Button size="sm" variant={showJDPanel ? 'default' : 'outline'} onClick={() => setShowJDPanel(!showJDPanel)}><Target className="w-4 h-4 mr-1" /> JD Match</Button>
           </div>
         </div>
+
+        {/* Job Description Matching Panel */}
+        {showJDPanel && (
+          <Card className="mb-6 border-primary/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2"><Target className="w-4 h-4 text-primary" /> Job Description Matching</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea value={jobDesc} onChange={e => setJobDesc(e.target.value)} rows={4} placeholder="Paste the job description here to analyze keyword matches..." />
+              <Button onClick={handleMatchKeywords} disabled={aiLoading === 'match'} className="gap-2">
+                {aiLoading === 'match' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
+                Analyze Keywords
+              </Button>
+              {keywords && (
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <h4 className="text-xs font-semibold text-green-600 flex items-center gap-1 mb-2"><CheckCircle className="w-3 h-3" /> Matched Keywords</h4>
+                    <div className="flex flex-wrap gap-1">{keywords.matched.map((k, i) => <span key={i} className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs">{k}</span>)}</div>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-red-600 flex items-center gap-1 mb-2"><XCircle className="w-3 h-3" /> Missing Keywords</h4>
+                    <div className="flex flex-wrap gap-1">{keywords.missing.map((k, i) => <span key={i} className="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs">{k}</span>)}</div>
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-semibold text-primary flex items-center gap-1 mb-2"><Lightbulb className="w-3 h-3" /> Suggestions</h4>
+                    <ul className="space-y-1">{keywords.suggestions.map((s, i) => <li key={i} className="text-xs text-muted-foreground">• {s}</li>)}</ul>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <div className="grid lg:grid-cols-2 gap-6 relative">
           {/* Left: Form */}
           {!fullPreview && (
             <div className="space-y-6 max-h-[calc(100vh-180px)] overflow-y-auto pr-2">
-              {/* Personal Info */}
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-base">Personal Information</CardTitle></CardHeader>
                 <CardContent className="space-y-3">
@@ -265,15 +254,20 @@ const Builder = () => {
                 </CardContent>
               </Card>
 
-              {/* Summary */}
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-base">Professional Summary</CardTitle>
                     <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><Wand2 className="w-3 h-3" /> Rewrite</Button>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><Maximize2 className="w-3 h-3" /> Expand</Button>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1"><Minimize2 className="w-3 h-3" /> Shorten</Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" disabled={!!aiLoading} onClick={() => handleAI('rewrite', data.summary, r => update('summary', r))}>
+                        {aiLoading === 'rewrite' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />} Rewrite
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" disabled={!!aiLoading} onClick={() => handleAI('expand', data.summary, r => update('summary', r))}>
+                        {aiLoading === 'expand' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Maximize2 className="w-3 h-3" />} Expand
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" disabled={!!aiLoading} onClick={() => handleAI('shorten', data.summary, r => update('summary', r))}>
+                        {aiLoading === 'shorten' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Minimize2 className="w-3 h-3" />} Shorten
+                      </Button>
                     </div>
                   </div>
                 </CardHeader>
@@ -282,7 +276,6 @@ const Builder = () => {
                 </CardContent>
               </Card>
 
-              {/* Experience */}
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
@@ -307,7 +300,10 @@ const Builder = () => {
                           <div key={bi} className="flex gap-2 items-start">
                             <GripVertical className="w-4 h-4 mt-2.5 text-muted-foreground/50 shrink-0" />
                             <Input value={b} onChange={e => updateBullet(i, bi, e.target.value)} className="text-sm" />
-                            <Button size="sm" variant="ghost" className="h-8 text-xs shrink-0"><Wand2 className="w-3 h-3" /></Button>
+                            <Button size="sm" variant="ghost" className="h-8 text-xs shrink-0" disabled={!!aiLoading}
+                              onClick={() => handleAI('bullet', b, r => updateBullet(i, bi, r))}>
+                              {aiLoading === 'bullet' ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                            </Button>
                           </div>
                         ))}
                         <Button size="sm" variant="ghost" onClick={() => addBullet(i)} className="h-7 text-xs"><Plus className="w-3 h-3 mr-1" /> Add bullet</Button>
@@ -317,7 +313,6 @@ const Builder = () => {
                 </CardContent>
               </Card>
 
-              {/* Education */}
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-base">Education</CardTitle></CardHeader>
                 <CardContent className="space-y-4">
@@ -334,16 +329,10 @@ const Builder = () => {
                 </CardContent>
               </Card>
 
-              {/* Skills */}
               <Card>
                 <CardHeader className="pb-3"><CardTitle className="text-base">Skills</CardTitle></CardHeader>
                 <CardContent>
-                  <Textarea
-                    value={data.skills.join(', ')}
-                    onChange={e => update('skills', e.target.value.split(',').map(s => s.trim()).filter(Boolean))}
-                    placeholder="React, TypeScript, Node.js..."
-                    rows={3}
-                  />
+                  <Textarea value={data.skills.join(', ')} onChange={e => update('skills', e.target.value.split(',').map(s => s.trim()).filter(Boolean))} placeholder="React, TypeScript, Node.js..." rows={3} />
                   <p className="text-xs text-muted-foreground mt-1">Separate skills with commas</p>
                 </CardContent>
               </Card>
