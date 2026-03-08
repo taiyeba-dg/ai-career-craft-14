@@ -9,6 +9,7 @@ const navItems = [
   { label: 'Templates', path: '/templates' },
   { label: 'Builder', path: '/builder' },
   { label: 'AI Tools', path: '/ai-tools' },
+  { label: 'Cover Letter', path: '/cover-letter' },
   { label: 'Pricing', path: '/pricing' },
   { label: 'About', path: '/about' },
   { label: 'Contact', path: '/contact' },

@@ -3,7 +3,10 @@ import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Wand2, Copy, RotateCcw, ArrowRight } from 'lucide-react';
+import { Wand2, Copy, RotateCcw, ArrowRight, Loader2 } from 'lucide-react';
+import { callResumeAI } from '@/lib/ai';
+import { useToast } from '@/hooks/use-toast';
+import { Link } from 'react-router-dom';
 
 const modes = [
   { id: 'formal', label: 'Formal', description: 'Professional and polished tone' },
@@ -12,25 +15,24 @@ const modes = [
   { id: 'technical', label: 'Technical', description: 'Detail-oriented and specific' },
 ];
 
-const exampleOutputs: Record<string, string> = {
-  formal: "Spearheaded the development and implementation of a comprehensive microservices architecture, resulting in a 40% improvement in system response times and enhanced scalability across the organization's digital infrastructure.",
-  concise: "Led microservices migration → 40% faster response times, 2M+ daily users served.",
-  creative: "Transformed a monolithic legacy system into a sleek microservices powerhouse — slashing response times by 40% and seamlessly serving over 2 million daily users.",
-  technical: "Architected event-driven microservices using Kafka, Redis, and Kubernetes on AWS ECS. Implemented circuit breakers and service mesh (Istio), reducing p99 latency by 40% for 2M+ DAU.",
-};
-
 const AITools = () => {
   const [input, setInput] = useState("Managed development of microservices architecture for 2M+ users, improved response times by 40%");
   const [mode, setMode] = useState('formal');
-  const [output, setOutput] = useState(exampleOutputs.formal);
+  const [output, setOutput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const { toast } = useToast();
 
-  const generate = () => {
+  const generate = async () => {
+    if (!input.trim()) return;
     setIsGenerating(true);
-    setTimeout(() => {
-      setOutput(exampleOutputs[mode]);
+    try {
+      const result = await callResumeAI({ action: 'rewrite', content: input, mode });
+      setOutput(result);
+    } catch (e: any) {
+      toast({ title: 'AI Error', description: e.message, variant: 'destructive' });
+    } finally {
       setIsGenerating(false);
-    }, 800);
+    }
   };
 
   return (
@@ -38,7 +40,7 @@ const AITools = () => {
       <section className="container section-padding">
         <div className="text-center mb-10">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">AI Writing Tools</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-sans">
             Transform your resume content with AI-powered rewriting in multiple styles and tones.
           </p>
         </div>
@@ -73,7 +75,7 @@ const AITools = () => {
                 placeholder="Paste your resume bullet point, summary, or achievement here..."
               />
               <Button className="mt-4 w-full gap-2" onClick={generate} disabled={isGenerating}>
-                <Wand2 className="w-4 h-4" />
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                 {isGenerating ? 'Generating...' : `Rewrite as ${modes.find(m => m.id === mode)?.label}`}
               </Button>
             </CardContent>
@@ -84,10 +86,10 @@ const AITools = () => {
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base">AI Output</CardTitle>
                 <div className="flex gap-1">
-                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => navigator.clipboard.writeText(output)}>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => { navigator.clipboard.writeText(output); toast({ title: 'Copied!' }); }} disabled={!output}>
                     <Copy className="w-3 h-3" /> Copy
                   </Button>
-                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={generate}>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={generate} disabled={isGenerating}>
                     <RotateCcw className="w-3 h-3" /> Retry
                   </Button>
                 </div>
@@ -95,7 +97,7 @@ const AITools = () => {
             </CardHeader>
             <CardContent>
               <div className={`min-h-[200px] p-4 rounded-lg bg-secondary/50 text-sm leading-relaxed ${isGenerating ? 'animate-pulse' : ''}`}>
-                {output}
+                {output || <span className="text-muted-foreground italic">AI output will appear here after you click generate...</span>}
               </div>
             </CardContent>
           </Card>
@@ -104,19 +106,21 @@ const AITools = () => {
         {/* Additional Tools */}
         <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mt-12">
           {[
-            { title: 'Summary Generator', desc: 'Create a compelling professional summary from your experience.' },
-            { title: 'Achievement Quantifier', desc: 'Add metrics and numbers to make your achievements stand out.' },
-            { title: 'Cover Letter Writer', desc: 'Generate a tailored cover letter matching your resume.' },
+            { title: 'Summary Generator', desc: 'Create a compelling professional summary from your experience.', link: '/builder' },
+            { title: 'Achievement Quantifier', desc: 'Add metrics and numbers to make your achievements stand out.', link: '/builder' },
+            { title: 'Cover Letter Writer', desc: 'Generate a tailored cover letter matching your resume.', link: '/cover-letter' },
           ].map((tool, i) => (
-            <Card key={i} className="hover-lift cursor-pointer group">
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-2">{tool.title}</h3>
-                <p className="text-sm text-muted-foreground mb-4">{tool.desc}</p>
-                <Button variant="ghost" size="sm" className="gap-1 group-hover:text-primary">
-                  Try it <ArrowRight className="w-3 h-3" />
-                </Button>
-              </CardContent>
-            </Card>
+            <Link to={tool.link} key={i}>
+              <Card className="hover-lift cursor-pointer group h-full">
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-2 font-display">{tool.title}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">{tool.desc}</p>
+                  <Button variant="ghost" size="sm" className="gap-1 group-hover:text-primary">
+                    Try it <ArrowRight className="w-3 h-3" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       </section>
