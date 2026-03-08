@@ -1,106 +1,81 @@
-import { useState } from 'react';
 import Layout from '@/components/layout/Layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Check, Sparkles, Zap, Building } from 'lucide-react';
+import { Check, Heart, Github, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
-const plans = [
-  {
-    name: 'Free',
-    icon: Sparkles,
-    monthlyPrice: 0,
-    yearlyPrice: 0,
-    description: 'Perfect for getting started',
-    features: ['1 resume', '3 templates', 'Basic AI suggestions', 'PDF export', 'ATS score check'],
-    notIncluded: ['Unlimited resumes', 'All 25 templates', 'Advanced AI rewriting', 'Cover letter generator', 'LinkedIn optimizer', 'Priority support'],
-    cta: 'Start Free',
-    popular: false,
-  },
-  {
-    name: 'Premium',
-    icon: Zap,
-    monthlyPrice: 9.99,
-    yearlyPrice: 7.99,
-    description: 'Most popular for job seekers',
-    features: ['Unlimited resumes', 'All 25 templates', 'Advanced AI rewriting', 'Cover letter generator', 'PDF, Word, Text export', 'ATS optimization', 'LinkedIn optimizer'],
-    notIncluded: ['Team management', 'API access', 'Custom branding'],
-    cta: 'Get Premium',
-    popular: true,
-  },
-  {
-    name: 'Pro',
-    icon: Building,
-    monthlyPrice: 19.99,
-    yearlyPrice: 15.99,
-    description: 'For teams and enterprises',
-    features: ['Everything in Premium', 'Team management', 'Custom branding', 'API access', 'Bulk resume creation', 'Advanced analytics', 'Priority support', 'Dedicated account manager'],
-    notIncluded: [],
-    cta: 'Contact Sales',
-    popular: false,
-  },
+const features = [
+  'Unlimited resumes',
+  'All 25+ templates',
+  'AI-powered content generation',
+  'Cover letter generator',
+  'PDF & text export',
+  'ATS optimization & scoring',
+  'LinkedIn profile optimizer',
+  'Real-time live preview',
+  'No account required',
+  'No watermarks',
 ];
 
 const Pricing = () => {
-  const [yearly, setYearly] = useState(false);
-
   return (
     <Layout>
       <section className="container section-padding">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Simple, Transparent Pricing</h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Start free and upgrade as you grow. No hidden fees, cancel anytime.
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <span className={`text-sm font-medium ${!yearly ? 'text-foreground' : 'text-muted-foreground'}`}>Monthly</span>
-            <Switch checked={yearly} onCheckedChange={setYearly} />
-            <span className={`text-sm font-medium ${yearly ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Yearly <span className="text-xs text-primary font-semibold ml-1">Save 20%</span>
-            </span>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium mb-6">
+            <Heart className="w-4 h-4" />
+            Open Source & Free
           </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Free for Everyone</h1>
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-sans">
+            Velora is open source and completely free to use. No paywalls, no premium tiers, no hidden fees — just powerful career tools for everyone.
+          </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {plans.map((plan) => (
-            <Card key={plan.name} className={`relative ${plan.popular ? 'border-primary ring-2 ring-primary/20 shadow-lg' : 'border-border/50'}`}>
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
-                  Most Popular
-                </div>
-              )}
-              <CardHeader className="text-center pb-2">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
-                  <plan.icon className="w-6 h-6" />
-                </div>
-                <CardTitle className="text-xl">{plan.name}</CardTitle>
-                <p className="text-sm text-muted-foreground">{plan.description}</p>
-              </CardHeader>
-              <CardContent className="text-center">
-                <div className="mb-6">
-                  <span className="text-4xl font-bold">${yearly ? plan.yearlyPrice : plan.monthlyPrice}</span>
-                  {plan.monthlyPrice > 0 && <span className="text-muted-foreground text-sm">/month</span>}
-                </div>
-                <Button className={`w-full mb-6 ${plan.popular ? '' : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'}`}>
-                  {plan.cta}
+        <div className="max-w-lg mx-auto">
+          <Card className="border-primary ring-2 ring-primary/20 shadow-lg relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
+              Forever Free
+            </div>
+            <CardHeader className="text-center pb-2">
+              <div className="w-14 h-14 rounded-xl bg-primary/10 text-primary flex items-center justify-center mx-auto mb-3">
+                <Star className="w-7 h-7" />
+              </div>
+              <CardTitle className="text-2xl">Everything Included</CardTitle>
+              <p className="text-sm text-muted-foreground font-sans">All features, no restrictions</p>
+            </CardHeader>
+            <CardContent className="text-center">
+              <div className="mb-6">
+                <span className="text-5xl font-bold font-display">$0</span>
+                <span className="text-muted-foreground text-sm ml-1">forever</span>
+              </div>
+              <Link to="/builder">
+                <Button className="w-full mb-6" size="lg">
+                  Start Building — It's Free
                 </Button>
-                <ul className="space-y-2.5 text-left text-sm">
-                  {plan.features.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <Check className="w-4 h-4 text-primary shrink-0" />
-                      {f}
-                    </li>
-                  ))}
-                  {plan.notIncluded.map((f, i) => (
-                    <li key={i} className="flex items-center gap-2 text-muted-foreground/50">
-                      <Check className="w-4 h-4 shrink-0 opacity-30" />
-                      <span className="line-through">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
-          ))}
+              </Link>
+              <ul className="space-y-3 text-left text-sm">
+                {features.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <Check className="w-4 h-4 text-primary shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Open Source CTA */}
+        <div className="text-center mt-16 max-w-2xl mx-auto">
+          <h2 className="text-2xl font-bold mb-4">Built in the Open</h2>
+          <p className="text-muted-foreground mb-6 font-sans">
+            Velora is open source. Contribute, fork, or self-host — it's yours. We believe career tools should be accessible to everyone, everywhere.
+          </p>
+          <Button variant="outline" className="gap-2" size="lg">
+            <Github className="w-5 h-5" />
+            View on GitHub
+          </Button>
         </div>
       </section>
     </Layout>

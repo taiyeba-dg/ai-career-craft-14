@@ -166,7 +166,7 @@ const Index = () => {
         <div className="container section-padding text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-primary-foreground">Ready to Build Your Perfect Resume?</h2>
           <p className="text-primary-foreground/80 text-lg mb-8 max-w-xl mx-auto font-sans">
-            Join 100,000+ professionals who've landed their dream jobs with Velora.
+            Join 100,000+ professionals using Velora — open source and free forever.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto">
             <Input placeholder="Enter your email" type="email" className="bg-primary-foreground text-foreground border-0" />
