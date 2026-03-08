@@ -45,7 +45,8 @@ const Header = () => {
           ))}
         </nav>
 
-        <div className="hidden lg:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-2">
+          <ThemeToggle />
           <Link to="/signin">
             <Button variant="ghost" size="sm">Sign In</Button>
           </Link>
